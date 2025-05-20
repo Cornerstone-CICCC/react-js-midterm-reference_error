@@ -1,0 +1,41 @@
+type Mutation {
+  createProduct(input: CreateProductInput): ProductResponseDto!
+  updateProduct(id: String!, input: UpdateProductInput): ProductResponseDto!
+  deleteProduct(id: String!): ProductResponseDto!
+}
+
+type Query {
+  readProducts: [ProductResponseDto!]!
+  findProductById(id: String!): ProductResponseDto
+  findProductsByCategory(category: String!): [ProductResponseDto!]!
+}
+
+input CreateProductInput {
+  title: String!
+  description: String!
+  price: Int!
+  category: String!
+  condition: String!
+}
+
+input UpdateProductInput {
+  title: String
+  description: String
+  price: Int
+  category: String
+  condition: String
+  images: [ImageInput!]
+}
+
+input ImageInput {
+  url: String!
+  order: number!
+  format: String!
+}
+
+type ImageResponseDto {
+  imageId: String!
+  url: String!
+  order: String!
+  format: String!
+}

@@ -1,0 +1,165 @@
+classDiagram
+    %% Domain Layer
+    namespace Domain {
+        class Report {
+            +ReportId id
+            +UserId reporterId
+            +ReportType type
+            +string targetId
+            +string reason
+            +ReportStatus status
+            +Date createdAt
+            +resolve(): void
+            +isValid(): boolean
+        }
+
+        class UserSanction {
+            +SanctionId id
+            +UserId userId
+            +SanctionType type
+            +string reason
+            +Date startedAt
+            +Date? endAt
+            +isActive(): boolean
+            +lift(): void
+        }
+
+        class ReportType {
+            <<enumeration>>
+            INAPPROPRIATE_PRODUCT
+            INAPPROPRIATE_USER
+            FRAUD_SUSPICION
+        }
+
+        class ReportStatus {
+            <<enumeration>>
+            PENDING
+            REVIEWING
+            RESOLVED
+            DISMISSED
+        }
+
+        class SanctionType {
+            <<enumeration>>
+            WARNING
+            TEMPORARY_SUSPENSION
+            PERMANENT_BAN
+        }
+    }
+
+    %% Application Layer
+    namespace Application {
+        class ModerationService {
+            -reportRepository: IReportRepository
+            -userSanctionRepository: IUserSanctionRepository
+            -userRepository: IUserRepository
+            -productRepository: IProductRepository
+            -notificationService: NotificationService
+            +createReport(dto: CreateReportDto): Promise~Report~
+            +reviewReport(reportId: string, adminId: string): Promise~Report~
+            +resolveReport(reportId: string, action: ResolveReportDto): Promise~Report~
+            +getReportsByStatus(status: string): Promise~Report[]~
+            +sanctionUser(dto: SanctionUserDto): Promise~UserSanction~
+            +liftSanction(sanctionId: string): Promise~void~
+            +getUserSanctions(userId: string): Promise~UserSanction[]~
+        }
+
+        class CreateReportDto {
+            +string reporterId
+            +string type
+            +string targetId
+            +string reason
+        }
+
+        class ResolveReportDto {
+            +string resolution
+            +string? sanctionType
+            +string? sanctionReason
+            +Date? sanctionEndDate
+        }
+
+        class SanctionUserDto {
+            +string userId
+            +string type
+            +string reason
+            +Date? endDate
+        }
+
+        class ReportResponseDto {
+            +string id
+            +string reporterId
+            +string type
+            +string targetId
+            +string reason
+            +string status
+            +Date createdAt
+        }
+
+        class UserSanctionResponseDto {
+            +string id
+            +string userId
+            +string type
+            +string reason
+            +Date startedAt
+            +Date? endAt
+            +boolean isActive
+        }
+    }
+
+    %% Infrastructure Layer
+    namespace Infrastructure {
+        class ReportRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Report~
+            +findByStatus(status: string): Promise~Report[]~
+            +findByReporter(reporterId: string): Promise~Report[]~
+            +findByTarget(targetId: string): Promise~Report[]~
+            +save(report: Report): Promise~void~
+            +update(report: Report): Promise~void~
+        }
+
+        class UserSanctionRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~UserSanction~
+            +findByUser(userId: string): Promise~UserSanction[]~
+            +findActiveByUser(userId: string): Promise~UserSanction[]~
+            +save(sanction: UserSanction): Promise~void~
+            +update(sanction: UserSanction): Promise~void~
+        }
+
+        class IReportRepository {
+            <<interface>>
+            +findById(id: string): Promise~Report~
+            +findByStatus(status: string): Promise~Report[]~
+            +findByReporter(reporterId: string): Promise~Report[]~
+            +findByTarget(targetId: string): Promise~Report[]~
+            +save(report: Report): Promise~void~
+            +update(report: Report): Promise~void~
+        }
+
+        class IUserSanctionRepository {
+            <<interface>>
+            +findById(id: string): Promise~UserSanction~
+            +findByUser(userId: string): Promise~UserSanction[]~
+            +findActiveByUser(userId: string): Promise~UserSanction[]~
+            +save(sanction: UserSanction): Promise~void~
+            +update(sanction: UserSanction): Promise~void~
+        }
+    }
+
+    %% Relationships
+    Report --> ReportType : uses
+    Report --> ReportStatus : uses
+    UserSanction --> SanctionType : uses
+    Report "1" --> "0..1" UserSanction : may result in
+
+    ModerationService --> IReportRepository : uses
+    ModerationService --> IUserSanctionRepository : uses
+    ModerationService --> CreateReportDto : uses
+    ModerationService --> ResolveReportDto : uses
+    ModerationService --> SanctionUserDto : uses
+    ModerationService --> ReportResponseDto : returns
+    ModerationService --> UserSanctionResponseDto : returns
+
+    ReportRepository ..|> IReportRepository : implements
+    UserSanctionRepository ..|> IUserSanctionRepository : implements

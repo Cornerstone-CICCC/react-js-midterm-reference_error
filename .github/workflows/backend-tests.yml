@@ -1,0 +1,110 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  changes:
+    name: Check for backend changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    
+    steps:
+      # Checkout Repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      # Check for changes in the backend directory
+      - name: Check for backend changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+
+  test:
+    name: Run Backend Tests
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      github.event_name == 'push' || 
+      (github.event_name == 'pull_request' && needs.changes.outputs.backend == 'true')
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+      SUPABASE_DIRECT_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      PRISMA_SCHEMA: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Create env file
+        run: |
+          cd backend
+          echo "SUPABASE_DATABASE_URL=${{ secrets.SUPABASE_DATABASE_URL }}" > .env.test
+          echo "SUPABASE_DIRECT_URL=${{ secrets.SUPABASE_DIRECT_URL }}" >> .env.test
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env.test
+          echo "PRISMA_SCHEMA=test" >> .env.test
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run Prisma migrations for test environment
+        run: |
+          cd backend
+          npx prisma migrate deploy
+
+      - name: Run tests with coverage
+        run: |
+          cd backend
+          npm run test:cov
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: backend/coverage
+          retention-days: 7
+
+      # Comment on PR with coverage report
+      - name: Jest Coverage Comment
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/jest-coverage-comment@main
+        with:
+          coverage-summary-path: backend/coverage/coverage-summary.json
+          title: 'Backend Test Coverage Report'
+          summary-title: '📊 Coverage Summary'
+          badge-title: 'Coverage'
+          hide-comment: false
+          create-new-comment: true
+          hide-summary: false
+          junitxml-path: backend/junit.xml
+          junitxml-title: '🧪 Test Results'

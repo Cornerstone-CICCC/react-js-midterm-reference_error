@@ -1,0 +1,188 @@
+classDiagram
+    %% Domain Layer
+    namespace Domain {
+        class Chat {
+            +ChatId id
+            +ProductId productId
+            +UserId[] participants
+            +ChatStatus status
+            +Date createdAt
+            +Date? closedAt
+            +close(): void
+            +reopen(): void
+            +addMessage(message: Message): void
+        }
+
+        class Message {
+            +MessageId id
+            +ChatId chatId
+            +UserId senderId
+            +string content
+            +Date sentAt
+            +boolean isRead
+            +markAsRead(): void
+        }
+
+        class Notification {
+            +NotificationId id
+            +UserId userId
+            +NotificationType type
+            +string content
+            +boolean isRead
+            +Date createdAt
+            +markAsRead(): void
+        }
+
+        class ChatStatus {
+            <<enumeration>>
+            ACTIVE
+            CLOSED
+        }
+
+        class NotificationType {
+            <<enumeration>>
+            LIKE_RECEIVED
+            MESSAGE_RECEIVED
+            PRICE_CHANGED
+            DEPARTURE_REMINDER
+        }
+    }
+
+    %% Application Layer
+    namespace Application {
+        class ChatService {
+            -chatRepository: IChatRepository
+            -messageRepository: IMessageRepository
+            -notificationService: NotificationService
+            +createChat(dto: CreateChatDto): Promise~Chat~
+            +sendMessage(dto: SendMessageDto): Promise~Message~
+            +getChatById(chatId: string): Promise~Chat~
+            +getUserChats(userId: string): Promise~Chat[]~
+            +closeChat(chatId: string): Promise~void~
+            +reopenChat(chatId: string): Promise~void~
+        }
+
+        class NotificationService {
+            -notificationRepository: INotificationRepository
+            -pushNotificationService: IPushNotificationService
+            +createNotification(dto: CreateNotificationDto): Promise~Notification~
+            +markAsRead(notificationId: string): Promise~void~
+            +getUserNotifications(userId: string): Promise~Notification[]~
+            +sendPriceChangeNotification(userId: string, productId: string): Promise~void~
+            +sendMessageNotification(userId: string, chatId: string): Promise~void~
+        }
+
+        class CreateChatDto {
+            +string productId
+            +string[] participantIds
+        }
+
+        class SendMessageDto {
+            +string chatId
+            +string senderId
+            +string content
+        }
+
+        class CreateNotificationDto {
+            +string userId
+            +string type
+            +string content
+        }
+
+        class ChatResponseDto {
+            +string id
+            +string productId
+            +string[] participants
+            +string status
+            +MessageResponseDto[] messages
+            +Date createdAt
+        }
+
+        class MessageResponseDto {
+            +string id
+            +string senderId
+            +string content
+            +Date sentAt
+            +boolean isRead
+        }
+    }
+
+    %% Infrastructure Layer
+    namespace Infrastructure {
+        class ChatRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Chat~
+            +findByUser(userId: string): Promise~Chat[]~
+            +findByProduct(productId: string): Promise~Chat[]~
+            +save(chat: Chat): Promise~void~
+            +update(chat: Chat): Promise~void~
+        }
+
+        class MessageRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Message~
+            +findByChat(chatId: string): Promise~Message[]~
+            +save(message: Message): Promise~void~
+            +update(message: Message): Promise~void~
+        }
+
+        class NotificationRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Notification~
+            +findByUser(userId: string): Promise~Notification[]~
+            +save(notification: Notification): Promise~void~
+            +update(notification: Notification): Promise~void~
+        }
+
+        class IChatRepository {
+            <<interface>>
+            +findById(id: string): Promise~Chat~
+            +findByUser(userId: string): Promise~Chat[]~
+            +findByProduct(productId: string): Promise~Chat[]~
+            +save(chat: Chat): Promise~void~
+            +update(chat: Chat): Promise~void~
+        }
+
+        class IMessageRepository {
+            <<interface>>
+            +findById(id: string): Promise~Message~
+            +findByChat(chatId: string): Promise~Message[]~
+            +save(message: Message): Promise~void~
+            +update(message: Message): Promise~void~
+        }
+
+        class INotificationRepository {
+            <<interface>>
+            +findById(id: string): Promise~Notification~
+            +findByUser(userId: string): Promise~Notification[]~
+            +save(notification: Notification): Promise~void~
+            +update(notification: Notification): Promise~void~
+        }
+
+        class IPushNotificationService {
+            <<interface>>
+            +sendPush(userId: string, message: string): Promise~void~
+        }
+    }
+
+    %% Relationships
+    Chat "1" --> "0..*" Message : contains
+    Chat --> ChatStatus : uses
+    Notification --> NotificationType : uses
+
+    ChatService --> IChatRepository : uses
+    ChatService --> IMessageRepository : uses
+    ChatService --> NotificationService : uses
+    ChatService --> CreateChatDto : uses
+    ChatService --> SendMessageDto : uses
+    ChatService --> ChatResponseDto : returns
+
+    NotificationService --> INotificationRepository : uses
+    NotificationService --> IPushNotificationService : uses
+    NotificationService --> CreateNotificationDto : uses
+
+    ChatResponseDto --> MessageResponseDto : contains
+
+    ChatRepository ..|> IChatRepository : implements
+    MessageRepository ..|> IMessageRepository : implements
+    NotificationRepository ..|> INotificationRepository : implements

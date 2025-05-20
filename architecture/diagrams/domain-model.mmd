@@ -1,0 +1,248 @@
+classDiagram
+    %% Identity Context
+    class User {
+        +UserId id
+        +string email
+        +string nickname
+        +Date? departureDate
+        +boolean isActive
+        +Date createdAt
+        +updateProfile()
+        +setDepartureDate()
+        +deactivate()
+    }
+
+    class UserProfile {
+        +string nickname
+        +string? avatarUrl
+        +string? bio
+    }
+
+    %% Product Context
+    class Product {
+        +ProductId id
+        +UserId sellerId
+        +string title
+        +string description
+        +Money price
+        +ProductStatus status
+        +Category category
+        +SubCategory? subCategory
+        +ProductCondition condition
+        +List~ProductImage~ images
+        +int likeCount
+        +Date createdAt
+        +updatePrice()
+        +changeStatus()
+        +delete()
+    }
+
+    class ProductImage {
+        +ImageId id
+        +string url
+        +int order
+        +string format
+    }
+
+    class Category {
+        +CategoryId id
+        +string name
+        +List~SubCategory~ subCategories
+    }
+
+    class SubCategory {
+        +SubCategoryId id
+        +string name
+        +CategoryId parentId
+    }
+
+    %% Transaction Context
+    class Order {
+        +OrderId id
+        +ProductId productId
+        +UserId buyerId
+        +UserId sellerId
+        +Money finalPrice
+        +OrderStatus status
+        +Date createdAt
+        +Date? completedAt
+        +complete()
+        +cancel()
+    }
+
+    class Payment {
+        +PaymentId id
+        +OrderId orderId
+        +Money amount
+        +Money fee
+        +PaymentMethod method
+        +PaymentStatus status
+        +Date paidAt
+        +Date? releasedAt
+        +release()
+    }
+
+    class TransactionHistory {
+        +HistoryId id
+        +UserId userId
+        +OrderId orderId
+        +TransactionType type
+        +Date createdAt
+    }
+
+    %% Communication Context
+    class Chat {
+        +ChatId id
+        +ProductId productId
+        +List~UserId~ participants
+        +ChatStatus status
+        +Date createdAt
+        +Date? closedAt
+        +close()
+        +reopen()
+    }
+
+    class Message {
+        +MessageId id
+        +ChatId chatId
+        +UserId senderId
+        +string content
+        +Date sentAt
+        +boolean isRead
+    }
+
+    class Notification {
+        +NotificationId id
+        +UserId userId
+        +NotificationType type
+        +string content
+        +boolean isRead
+        +Date createdAt
+    }
+
+    %% Reputation Context
+    class Review {
+        +ReviewId id
+        +OrderId orderId
+        +UserId reviewerId
+        +UserId revieweeId
+        +int rating
+        +string? comment
+        +Date createdAt
+    }
+
+    %% Social Context
+    class Like {
+        +LikeId id
+        +ProductId productId
+        +UserId userId
+        +Date createdAt
+    }
+
+    class Favorite {
+        +UserId userId
+        +ProductId productId
+        +Date addedAt
+    }
+
+    %% Moderation Context
+    class Report {
+        +ReportId id
+        +UserId reporterId
+        +ReportType type
+        +string targetId
+        +string reason
+        +ReportStatus status
+        +Date createdAt
+        +resolve()
+    }
+
+    class UserSanction {
+        +SanctionId id
+        +UserId userId
+        +SanctionType type
+        +string reason
+        +Date startedAt
+        +Date? endAt
+    }
+
+    %% Relationships
+    User "1" --> "0..*" Product : owns
+    User "1" --> "1" UserProfile : has
+    Product "1" --> "1..4" ProductImage : contains
+    Product "1" --> "1" Category : belongs to
+    Product "1" --> "0..1" SubCategory : belongs to
+    Order "1" --> "1" Product : for
+    Order "1" --> "1" Payment : has
+    Order "1" --> "0..1" Review : may have
+    Chat "1" --> "0..*" Message : contains
+
+    User "1" --> "0..*" Like : gives
+    User "1" --> "0..*" Favorite : has
+    Report "1" --> "0..1" UserSanction : may result in
+
+    %% Value Objects
+    class Money {
+        +decimal amount
+        +Currency currency
+    }
+
+    class Currency {
+        <<enumeration>>
+        CAD
+        USD
+    }
+
+    class ProductStatus {
+        <<enumeration>>
+        AVAILABLE
+        NEGOTIATING
+        SOLD
+        CANCELLED
+    }
+
+    class OrderStatus {
+        <<enumeration>>
+        PENDING_PAYMENT
+        PAID
+        COMPLETED
+        CANCELLED
+    }
+
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING
+        COMPLETED
+        RELEASED
+        FAILED
+    }
+
+    class PaymentMethod {
+        <<enumeration>>
+        CREDIT_CARD
+        DEBIT_CARD
+        PAYPAL
+    }
+
+
+
+    class NotificationType {
+        <<enumeration>>
+        LIKE_RECEIVED
+        MESSAGE_RECEIVED
+        PRICE_CHANGED
+        DEPARTURE_REMINDER
+    }
+
+    class ReportType {
+        <<enumeration>>
+        INAPPROPRIATE_PRODUCT
+        INAPPROPRIATE_USER
+        FRAUD_SUSPICION
+    }
+
+    class TransactionType {
+        <<enumeration>>
+        PURCHASE
+        SALE
+    }

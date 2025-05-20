@@ -1,0 +1,170 @@
+classDiagram
+    %% Domain Layer
+    namespace Domain {
+        class Product {
+            +ProductId id
+            +UserId sellerId
+            +string title
+            +string description
+            +Money price
+            +ProductStatus status
+            +Category category
+            +SubCategory? subCategory
+            +ProductCondition condition
+            +ProductImage[] images
+            +number likeCount
+            +Date createdAt
+            +updatePrice(newPrice: Money): void
+            +changeStatus(newStatus: ProductStatus): void
+            +delete(): void
+        }
+        class Product:::domain
+
+        class ProductImage {
+            +ImageId id
+            +string url
+            +number order
+            +string format
+        }
+
+        class Category {
+            +CategoryId id
+            +string name
+            +SubCategory[] subCategories
+        }
+
+        class SubCategory {
+            +SubCategoryId id
+            +string name
+            +CategoryId parentId
+        }
+
+        class Money {
+            +number amount
+            +Currency currency
+        }
+
+        class ProductStatus {
+            <<enumeration>>
+            AVAILABLE
+            SOLD
+            CANCELLED
+        }
+
+        class ProductCondition {
+            <<enumeration>>
+            NEW
+            LIKE_NEW
+            GOOD
+            FAIR
+            POOR
+        }
+
+        class Currency {
+            <<enumeration>>
+            CAD
+            USD
+        }
+    }
+
+    %% Application Layer
+    namespace Application {
+        class ProductService {
+            -productRepository: IProductRepository
+            +createProduct(dto: CreateProductDto): Promise~Product~
+            +updateProduct(id: string, dto: UpdateProductDto): Promise~Product~
+            +deleteProduct(id: string): Promise~void~
+            +getProductById(id: string): Promise~Product~
+            +searchProducts(query: SearchProductDto): Promise~Product[]~
+        }
+
+        class CreateProductDto {
+            +string title
+            +string description
+            +number price
+            +string currency
+            +string categoryId
+            +string? subCategoryId
+            +string condition
+            +CreateProductImageDto[] images
+        }
+
+        class UpdateProductDto {
+            +string? title
+            +string? description
+            +number? price
+            +string? status
+        }
+
+        class CreateProductImageDto {
+            +string url
+            +number order
+        }
+
+        class SearchProductDto {
+            +string? keyword
+            +string? categoryId
+            +number? minPrice
+            +number? maxPrice
+        }
+    }
+
+    %% Infrastructure Layer
+    namespace Infrastructure {
+        class ProductRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Product~
+            +findByCategory(categoryId: string): Promise~Product[]~
+            +save(product: Product): Promise~void~
+            +delete(id: string): Promise~void~
+            +search(criteria: SearchCriteria): Promise~Product[]~
+        }
+
+        class IProductRepository {
+            <<interface>>
+            +findById(id: string): Promise~Product~
+            +findByCategory(categoryId: string): Promise~Product[]~
+            +save(product: Product): Promise~void~
+            +delete(id: string): Promise~void~
+            +search(criteria: SearchCriteria): Promise~Product[]~
+        }
+    }
+
+    %% Apply styles
+    class Product:::domain
+    class ProductImage:::domain
+    class Category:::domain
+    class SubCategory:::domain
+    class Money:::domain
+    
+    class ProductStatus:::enum
+    class ProductCondition:::enum
+    class Currency:::enum
+    
+    class ProductService:::application
+    class CreateProductDto:::application
+    class UpdateProductDto:::application
+    class CreateProductImageDto:::application
+    class SearchProductDto:::application
+    
+    class ProductRepository:::infrastructure
+    class IProductRepository:::infrastructure
+
+    %% Relationships
+    Product "1" --> "1..4" ProductImage : contains
+    Product "1" --> "1" Category : belongs to
+    Product "1" --> "0..1" SubCategory : belongs to
+    Product --> Money : uses
+    Product --> ProductStatus : uses
+    Product --> ProductCondition : uses
+    Money --> Currency : uses
+    Category "1" --> "0..*" SubCategory : has
+
+    ProductService --> IProductRepository : uses
+    ProductService --> CreateProductDto : uses
+    ProductService --> UpdateProductDto : uses
+    ProductService --> SearchProductDto : uses
+    CreateProductDto --> CreateProductImageDto : contains
+
+    ProductRepository ..|> IProductRepository : implements
+    ProductRepository --> Product : manages

@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "lefthook": "^1.11.3"
+  },
+  "dependencies": {
+    "react-ions": "^5.4.1"
+  }
+}

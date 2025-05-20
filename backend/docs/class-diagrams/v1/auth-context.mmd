@@ -1,0 +1,73 @@
+classDiagram
+    %% Auth Domain
+    namespace Auth {
+        class OAuthToken {
+            -string _accessToken
+            -string _refreshToken
+            -Date _expiresAt
+            +get accessToken(): string
+            +get refreshToken(): string
+            +get expiresAt(): Date
+            +isExpired(): boolean
+        }
+    }
+
+    %% Auth Application
+    namespace Application {
+        class OAuthLoginUseCase {
+            -authService: IAuthService
+            -userRepository: IUserRepository
+            +getAuthUrl(provider): string
+            +handleCallback(code): Promise~TokenAndUser~
+        }
+        
+        class IAuthService {
+            <<interface>>
+            +getAuthUrl(provider): string
+            +handleCallback(code): Promise~TokenAndUser~
+        }
+    }
+    
+    %% Auth Infrastructure
+    namespace Infrastructure {
+        class SupabaseAuthService {
+            -supabaseClient: SupabaseClient
+            -config: AuthConfig
+            +getAuthUrl(provider): string
+            +handleCallback(code): Promise~TokenAndUser~
+        }
+        
+        class JwtService {
+            +sign(payload): string
+            +verify(token): any
+        }
+    }
+    
+    %% Auth Presentation
+    namespace Presentation {
+        class AuthController {
+            -oAuthLoginUseCase: OAuthLoginUseCase
+            +initiateOAuth(provider): void
+            +handleCallback(code): Promise~void~
+        }
+        
+        class AuthResolver {
+            -oAuthLoginUseCase: OAuthLoginUseCase
+            +getAuthUrl(provider): string
+        }
+        
+        class JwtAuthGuard {
+            -userRepository: IUserRepository
+            -jwtService: JwtService
+            +canActivate(context): Promise~boolean~
+        }
+    }
+    
+    %% Relationships
+    OAuthLoginUseCase --> IAuthService : uses
+    OAuthLoginUseCase --> IUserRepository : uses
+    SupabaseAuthService ..|> IAuthService : implements
+    AuthController --> OAuthLoginUseCase : uses
+    AuthResolver --> OAuthLoginUseCase : uses
+    JwtAuthGuard --> IUserRepository : uses
+    JwtAuthGuard --> JwtService : uses

@@ -1,0 +1,336 @@
+classDiagram
+    %% プレゼンテーション層 - リゾルバー
+    class AuthResolver {
+        -registerUseCase
+        -loginUseCase
+        -logoutUseCase
+        -resetPasswordUseCase
+        -verifyEmailUseCase
+        -refreshTokenUseCase
+        +register(input)
+        +login(input)
+        +logout()
+        +resetPassword(email)
+        +confirmPasswordReset(input)
+        +verifyEmail(token)
+        +refreshToken()
+        +me()
+    }
+    
+    class UserResolver {
+        -getUserUseCase
+        -updateProfileUseCase
+        -deactivateUserUseCase
+        +me()
+        +getUser(id)
+        +updateProfile(input)
+        +deactivateUser()
+    }
+    
+    %% 認証関連ユースケース
+    class RegisterUserUseCase {
+        -authService
+        -userRepository
+        +execute(input)
+    }
+
+    class LoginUseCase {
+        -authService
+        -userRepository
+        +execute(input)
+    }
+
+    class LogoutUseCase {
+        -authService
+        +execute(token)
+    }
+
+    class ResetPasswordUseCase {
+        -authService
+        +requestReset(email)
+        +confirmReset(input)
+    }
+
+    class VerifyEmailUseCase {
+        -authService
+        +execute(token)
+    }
+
+    class RefreshTokenUseCase {
+        -authService
+        +execute(token)
+    }
+
+    %% ユーザープロフィール関連ユースケース
+    class GetUserUseCase {
+        -userRepository
+        +execute(id)
+    }
+    
+    class UpdateProfileUseCase {
+        -userRepository
+        +execute(id, input)
+    }
+    
+    class DeactivateUserUseCase {
+        -userRepository
+        +execute(id)
+    }
+
+    %% 入力DTO
+    class RegisterUserInput {
+        +string email
+        +string password
+        +string nickname
+    }
+
+    class LoginUserInput {
+        +string email
+        +string password
+    }
+
+    class ResetPasswordInput {
+        +string token
+        +string password
+    }
+    
+    class UpdateProfileInput {
+        +string nickname
+        +string avatarUrl
+        +string bio
+    }
+
+    %% レスポンスDTO
+
+
+    class UserResponseDto {
+        +string id
+        +string email
+        +string nickname
+        +string avatarUrl
+        +string bio
+        +boolean isActive
+        +Date createdAt
+    }
+
+    class AuthResponseDto {
+        +string token
+        +UserResponseDto user
+    }
+
+    %% サービスインターフェース
+    class IAuthService {
+        <<interface>>
+        +register(email, password, nickname)
+        +login(email, password)
+        +logout(token)
+        +resetPassword(email)
+        +confirmPasswordReset(token, password)
+        +verifyEmail(token)
+        +refreshToken(token)
+        +validateToken(token)
+    }
+
+    class IUserRepository {
+        <<interface>>
+        +findById(id)
+        +findByAuthId(authId)
+        +save(user)
+        +update(user)
+    }
+
+    %% インフラストラクチャ層
+    class SupabaseAuthService {
+        -supabaseClient
+        +register(email, password, nickname)
+        +login(email, password)
+        +logout(token)
+        +resetPassword(email)
+        +confirmPasswordReset(token, password)
+        +verifyEmail(token)
+        +refreshToken(token)
+        +validateToken(token)
+    }
+    
+    class UserRepository {
+        -prisma
+        +findById(id)
+        +findByAuthId(authId)
+        +save(user)
+        +update(user)
+    }
+    
+    class JwtService {
+        -secret
+        +sign(payload)
+        +verify(token)
+    }
+
+    %% ドメイン層 - エンティティ
+    class User {
+        -UserId _id
+        -AuthId _authId
+        -Email _email
+        -Nickname _nickname
+        -AvatarUrl _avatarUrl 
+        -Bio _bio
+        -boolean _isActive
+        -Date _createdAt
+        -Date _updatedAt
+        +get id()
+        +get authId()
+        +get email()
+        +get nickname()
+        +get avatarUrl()
+        +get bio()
+        +get isActive()
+        +get createdAt()
+        +get updatedAt()
+        +updateProfile(nickname, avatarUrl, bio)
+        +deactivate()
+        +activate()
+    }
+
+    %% ドメイン層 - 値オブジェクト
+    class UserId {
+        -string value
+        +constructor(id)
+        -isValid(id)
+        +getValue()
+    }
+
+    class AuthId {
+        -string value
+        +constructor(id)
+        -isValid(id)
+        +getValue()
+        +equals(authId)
+    }
+
+    class Email {
+        -string value
+        +constructor(email)
+        -isValid(email)
+        +getValue()
+        +equals(email)
+    }
+
+    class Nickname {
+        -string value
+        +constructor(nickname)
+        -isValid(nickname)
+        +getValue()
+        +equals(nickname)
+    }
+
+    class AvatarUrl {
+        -string|undefined value
+        +constructor(avatarUrl)
+        +isValidUrl(url)
+        +isEmpty()
+        +getValue()
+    }
+
+    class Bio {
+        -string|null value
+        +constructor(bio)
+        -isValid(bio)
+        +getValue()
+    }
+
+    class AuthToken {
+        -string accessToken
+        -string refreshToken
+        -Date expiresAt
+        +constructor(accessToken, refreshToken, expiresIn)
+        +isExpired()
+        +getAccessToken()
+        +getRefreshToken()
+    }
+
+    %% 認証基盤
+    class JwtAuthGuard {
+        -jwtService
+        -userRepository
+        +canActivate(context)
+    }
+
+    class CurrentUser {
+        <<decorator>>
+    }
+
+    %% リレーションシップ 
+    %% プレゼンテーション層 -> アプリケーション層（ユースケース）
+    AuthResolver --> RegisterUserUseCase : uses
+    AuthResolver --> LoginUseCase : uses
+    AuthResolver --> LogoutUseCase : uses
+    AuthResolver --> ResetPasswordUseCase : uses
+    AuthResolver --> VerifyEmailUseCase : uses
+    AuthResolver --> RefreshTokenUseCase : uses
+    
+    UserResolver --> GetUserUseCase : uses
+    UserResolver --> UpdateProfileInput : uses
+    UserResolver --> DeactivateUserUseCase : uses
+    
+    %% プレゼンテーション層 -> 入力DTO
+    AuthResolver ..> RegisterUserInput : receives
+    AuthResolver ..> LoginUserInput : receives
+    AuthResolver ..> ResetPasswordInput : receives
+    
+    
+    %% 入力DTO -> アプリケーション層（ユースケース）
+    RegisterUserInput ..> RegisterUserUseCase : processes
+    LoginUserInput ..> LoginUseCase : processes
+    ResetPasswordInput ..> ResetPasswordUseCase : processes
+    UpdateProfileInput ..> UpdateProfileUseCase : processes
+    
+    %% アプリケーション層（ユースケース） -> 出力DTO
+    RegisterUserUseCase ..> AuthResponseDto : returns
+    LoginUseCase ..> AuthResponseDto : returns
+    RefreshTokenUseCase ..> AuthResponseDto : returns
+    
+    GetUserUseCase ..> UserResponseDto : returns
+    UpdateProfileUseCase ..> UserResponseDto : returns
+    
+    %% アプリケーション層（ユースケース） -> インフラストラクチャ層
+    RegisterUserUseCase --> IAuthService : uses
+    LoginUseCase --> IAuthService : uses
+    LogoutUseCase --> IAuthService : uses
+    ResetPasswordUseCase --> IAuthService : uses
+    VerifyEmailUseCase --> IAuthService : uses
+    RefreshTokenUseCase --> IAuthService : uses
+    
+    RegisterUserUseCase --> IUserRepository : uses
+    LoginUseCase --> IUserRepository : uses
+    GetUserUseCase --> IUserRepository : uses
+    UpdateProfileUseCase --> IUserRepository : uses
+    DeactivateUserUseCase --> IUserRepository : uses
+    
+    %% インフラストラクチャ層の実装
+    SupabaseAuthService ..|> IAuthService : implements
+    UserRepository ..|> IUserRepository : implements
+    
+    %% インフラストラクチャ層 -> ドメイン層
+    UserRepository --> User : manages
+    UserRepository ..> UserId : creates/uses
+    UserRepository ..> AuthId : creates/uses
+    
+    %% サービス内部での変換関連
+    SupabaseAuthService ..> AuthToken : creates
+    SupabaseAuthService ..> AuthId : creates
+    
+    %% ドメイン層の関連
+    User --> UserId : has
+    User --> AuthId : has
+    User --> Email : has
+    User --> Nickname : has
+    User --> AvatarUrl : has
+    User --> Bio : has
+    
+    %% 認証ガードの関連
+    JwtAuthGuard --> JwtService : uses
+    JwtAuthGuard --> UserRepository : uses
+    JwtAuthGuard ..> CurrentUser : sets user for
+    CurrentUser ..> User : extracts from request
+    %% レスポンスDTOの関連
+    AuthResponseDto --> UserResponseDto : contains

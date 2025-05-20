@@ -1,0 +1,124 @@
+classDiagram
+    %% Domain Layer
+    namespace Domain {
+        class Favorite {
+            +UserId userId
+            +ProductId productId
+            +Date addedAt
+        }
+
+        class Review {
+            +ReviewId id
+            +OrderId orderId
+            +UserId reviewerId
+            +UserId revieweeId
+            +number rating
+            +string? comment
+            +Date createdAt
+            +isValid(): boolean
+        }
+    }
+
+    %% Application Layer
+    namespace Application {
+        class FavoriteService {
+            -favoriteRepository: IFavoriteRepository
+            -notificationService: NotificationService
+            +addToFavorites(userId: string, productId: string): Promise~Favorite~
+            +removeFromFavorites(userId: string, productId: string): Promise~void~
+            +getUserFavorites(userId: string): Promise~Favorite[]~
+            +isProductFavorited(userId: string, productId: string): Promise~boolean~
+        }
+
+        class ReviewService {
+            -reviewRepository: IReviewRepository
+            -orderRepository: IOrderRepository
+            +createReview(dto: CreateReviewDto): Promise~Review~
+            +getUserReviews(userId: string): Promise~Review[]~
+            +getProductReviews(productId: string): Promise~Review[]~
+            +getAverageRating(userId: string): Promise~number~
+        }
+
+        class CreateReviewDto {
+            +string orderId
+            +string reviewerId
+            +string revieweeId
+            +number rating
+            +string? comment
+        }
+
+        class FavoriteResponseDto {
+            +string userId
+            +string productId
+            +Date addedAt
+            +ProductSummaryDto product
+        }
+
+        class ReviewResponseDto {
+            +string id
+            +string orderId
+            +string reviewerId
+            +string revieweeId
+            +number rating
+            +string? comment
+            +Date createdAt
+        }
+
+        class ProductSummaryDto {
+            +string id
+            +string title
+            +number price
+            +string imageUrl
+        }
+    }
+
+    %% Infrastructure Layer
+    namespace Infrastructure {
+        class FavoriteRepository {
+            -prisma: PrismaService
+            +findByUserAndProduct(userId: string, productId: string): Promise~Favorite~
+            +findByUser(userId: string): Promise~Favorite[]~
+            +save(favorite: Favorite): Promise~void~
+            +delete(userId: string, productId: string): Promise~void~
+        }
+
+        class ReviewRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Review~
+            +findByOrder(orderId: string): Promise~Review~
+            +findByReviewer(reviewerId: string): Promise~Review[]~
+            +findByReviewee(revieweeId: string): Promise~Review[]~
+            +save(review: Review): Promise~void~
+            +getAverageRating(userId: string): Promise~number~
+        }
+
+        class IFavoriteRepository {
+            <<interface>>
+            +findByUserAndProduct(userId: string, productId: string): Promise~Favorite~
+            +findByUser(userId: string): Promise~Favorite[]~
+            +save(favorite: Favorite): Promise~void~
+            +delete(userId: string, productId: string): Promise~void~
+        }
+
+        class IReviewRepository {
+            <<interface>>
+            +findById(id: string): Promise~Review~
+            +findByOrder(orderId: string): Promise~Review~
+            +findByReviewer(reviewerId: string): Promise~Review[]~
+            +findByReviewee(revieweeId: string): Promise~Review[]~
+            +save(review: Review): Promise~void~
+            +getAverageRating(userId: string): Promise~number~
+        }
+    }
+
+    %% Relationships
+    FavoriteService --> IFavoriteRepository : uses
+    FavoriteService --> FavoriteResponseDto : returns
+    FavoriteResponseDto --> ProductSummaryDto : contains
+
+    ReviewService --> IReviewRepository : uses
+    ReviewService --> CreateReviewDto : uses
+    ReviewService --> ReviewResponseDto : returns
+
+    FavoriteRepository ..|> IFavoriteRepository : implements
+    ReviewRepository ..|> IReviewRepository : implements

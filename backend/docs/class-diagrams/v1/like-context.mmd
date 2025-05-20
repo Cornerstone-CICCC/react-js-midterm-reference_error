@@ -1,0 +1,62 @@
+classDiagram
+    %% Domain Layer
+    namespace Domain {
+        class Like {
+            +LikeId id
+            +ProductId productId
+            +UserId userId
+            +Date createdAt
+        }
+    }
+
+    %% Application Layer
+    namespace Application {
+        class LikeService {
+            -likeRepository: ILikeRepository
+            -productRepository: IProductRepository
+            -notificationService: NotificationService
+            +likeProduct(userId: string, productId: string): Promise~Like~
+            +unlikeProduct(userId: string, productId: string): Promise~void~
+            +getUserLikes(userId: string): Promise~Like[]~
+            +getProductLikes(productId: string): Promise~Like[]~
+            +getLikeCount(productId: string): Promise~number~
+        }
+
+        class LikeResponseDto {
+            +string id
+            +string productId
+            +string userId
+            +Date createdAt
+        }
+
+    }
+
+    %% Infrastructure Layer
+    namespace Infrastructure {
+        class LikeRepository {
+            -prisma: PrismaService
+            +findByUserAndProduct(userId: string, productId: string): Promise~Like~
+            +findByUser(userId: string): Promise~Like[]~
+            +findByProduct(productId: string): Promise~Like[]~
+            +save(like: Like): Promise~void~
+            +delete(userId: string, productId: string): Promise~void~
+            +countByProduct(productId: string): Promise~number~
+        }
+
+        class ILikeRepository {
+            <<interface>>
+            +findByUserAndProduct(userId: string, productId: string): Promise~Like~
+            +findByUser(userId: string): Promise~Like[]~
+            +findByProduct(productId: string): Promise~Like[]~
+            +save(like: Like): Promise~void~
+            +delete(userId: string, productId: string): Promise~void~
+            +countByProduct(productId: string): Promise~number~
+        }
+
+    }
+
+    %% Relationships
+    LikeService --> ILikeRepository : uses
+    LikeService --> LikeResponseDto : returns
+    LikeRepository ..|> ILikeRepository : implements
+

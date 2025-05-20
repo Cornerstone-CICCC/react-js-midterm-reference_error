@@ -1,0 +1,35 @@
+type User {
+  id: ID!
+  authId: String!
+  email: String!
+  nickname: String
+  avatarUrl: String
+  bio: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Query {
+  me(): User!
+  getUser(id: ID!): [User!]!
+}
+
+type Mutation {
+  updateProfile(input: UpdateProfileInput!): User!
+  deactivateMe(): Boolean!
+}
+
+input CreateProductInput {
+  title: String!
+  description: String!
+  price: Float!
+  imageUrl: String
+}
+
+input UpdateProfileInput {
+  nickname: String
+  avatarUrl: String
+  bio: String
+}
+
+scalar DateTime

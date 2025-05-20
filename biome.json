@@ -1,0 +1,147 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "ignore": ["node_modules", "backend/dist/**", "frontend/.next/**"]
+  },
+  "linter": {
+    "enabled": true,
+    "ignore": ["node_modules"],
+    "rules": {
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnusedFunctionParameters": "error",
+        "useExhaustiveDependencies": "warn"
+      },
+      "a11y": {
+        "useButtonType": "off"
+      },
+      "suspicious": {
+        "noConsoleLog": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "json": {
+    "parser": {
+      "allowComments": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "enabled": true,
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "trailingCommas": "all",
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
+  },
+  "overrides": [
+    {
+      "include": ["backend/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      },
+      "graphql": {
+        "linter": {
+          "enabled": true
+        }
+      },
+      "javascript": {
+        "parser": {
+          "unsafeParameterDecoratorsEnabled": true
+        }
+      }
+    },
+    {
+      "include": ["frontend/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": {
+              "level": "error",
+              "options": {
+                "conventions": [
+                  {
+                    "selector": { "kind": "typeAlias" },
+                    "formats": ["PascalCase"]
+                  },
+                  {
+                    "selector": {
+                      "kind": "function"
+                    },
+                    "match": "getStaticProps|getStaticPaths|getServerSideProps|getInitialProps|generateMetadata|generateStaticParams|(.*)",
+                    "formats": ["PascalCase"]
+                  },
+                  {
+                    "selector": {
+                      "kind": "const"
+                    },
+                    "formats": ["camelCase", "CONSTANT_CASE"]
+                  },
+                  {
+                    "selector": {
+                      "kind": "variable"
+                    },
+                    "formats": ["camelCase"]
+                  }
+                ]
+              }
+            },
+            "useConst": {
+              "level": "error"
+            },
+            "useShorthandFunctionType": {
+              "level": "error"
+            },
+            "useImportType": {
+              "level": "error"
+            }
+          },
+          "nursery": {
+            "useComponentExportOnlyModules": {
+              "level": "error",
+              "options": {
+                "allowConstantExport": false,
+                "allowExportNames": [
+                  "metadata",
+                  "generateMetadata",
+                  "generateStaticParams",
+                  "getStaticProps",
+                  "getStaticPaths",
+                  "getServerSideProps",
+                  "revalidate",
+                  "dynamic",
+                  "generateImageMetadata",
+                  "viewport"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

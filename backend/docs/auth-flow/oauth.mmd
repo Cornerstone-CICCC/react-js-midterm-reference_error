@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant C as Client
+    participant G as GraphQL
+    participant A as Auth Service
+    participant S as Supabase
+    participant P as OAuth Provider
+    participant D as Database
+    
+    C->>G: initiateOAuth(provider)
+    G->>A: startOAuthFlow
+    A->>S: signInWithOAuth
+    S-->>C: redirect URL
+    C->>P: authorization
+    P-->>C: callback with code
+    C->>G: handleCallback(code)
+    G->>A: exchangeCode
+    A->>S: exchangeCodeForSession
+    S-->>A: session + user
+    A->>D: findOrCreateUser
+    D-->>A: user data
+    A-->>G: combined result
+    G-->>C: token + user

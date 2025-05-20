@@ -1,0 +1,33 @@
+type Order {
+  id: ID!
+  productId: ID!
+  buyerId: ID!
+  sellerId: ID!
+  finalPrice: Float!
+  status: String!
+  createdAt: DateTime!
+  paidAt: DateTime
+  completedAt: DateTime
+}
+
+type Query {
+  getOrderById(id: ID!): Order!
+}
+
+type Mutation {
+  createOrder(input: CreateOrderInput!): Order!
+  completeOrder(id: ID!): Order!
+  purchaseProduct(input: PurchaseProductInput!): OrderResponse!
+}
+
+input CreateOrderInput {
+  productId: ID!
+  buyerId: ID!
+}
+
+input PurchaseProductInput {
+  productId: ID!
+  paymentMethod: String!
+}
+
+scalar DateTime

@@ -1,0 +1,140 @@
+flowchart TB
+    %% Define styles with better text visibility
+    classDef actor fill:#f9f,stroke:#333,stroke-width:2px,color:#000
+    classDef usecase fill:#bbf,stroke:#333,stroke-width:2px,color:#000
+    classDef system fill:#bfb,stroke:#333,stroke-width:2px,color:#000
+    classDef admin fill:#fbb,stroke:#333,stroke-width:2px,color:#000
+
+    %% Actors
+    subgraph Actors
+        Buyer["👤 Buyer"]:::actor
+        Seller["👤 Seller"]:::actor
+        Admin["👨‍💼 Admin"]:::actor
+        System["⚙️ System"]:::actor
+    end
+
+    %% Main Layout Container
+    subgraph " "
+        %% Buyer Side
+        subgraph "Buyer Side"
+            %% Buyer Main Process
+            subgraph "Buyer Process"
+                direction LR
+                B1["Search<br/>Products"]:::usecase
+                B2["View<br/>Details"]:::usecase
+                B3["Ask<br/>Questions"]:::usecase
+                B5["Purchase"]:::usecase
+                B6["Arrange<br/>Pickup"]:::usecase
+                B7["Confirm<br/>Receipt"]:::usecase
+                B8["Review<br/>Seller"]:::usecase
+                B12["Add Purchase<br/>History"]:::usecase
+                
+                B1 --> B2
+                B2 --> B3
+                B3 --> B5
+                B5 --> B6
+                B6 --> B7
+                B7 --> B8
+                B8 --> B12
+            end
+
+            %% Buyer Additional Features
+            subgraph "Buyer Features"
+                B11["View Purchase<br/>History"]:::usecase
+                B10["Manage Favorites"]:::usecase
+                B9["Like Product"]:::usecase
+            end
+        end
+
+        %% Center Common Features
+        subgraph "Common Features"
+            C1["Register/<br/>Login"]:::usecase
+            C2["Edit<br/>Profile"]:::usecase
+            C3["Messaging"]:::usecase
+            C4["Report/<br/>Block"]:::usecase
+        end
+
+        %% Seller Side
+        subgraph "Seller Side"
+            %% Seller Main Process
+            subgraph "Seller Process"
+                direction LR
+                S1["List<br/>Product"]:::usecase
+                S2["Respond<br/>Questions"]:::usecase
+                S3["Handle<br/>Offers"]:::usecase
+                S4["Meet<br/>Buyer"]:::usecase
+                S5["Complete<br/>Sale"]:::usecase
+                S6["Review<br/>Buyer"]:::usecase
+                S7["Receive<br/>Payment"]:::usecase
+                S8["Add Sales<br/>History"]:::usecase
+                
+                S1 --> S2
+                S2 --> S3
+                S3 --> S4
+                S4 --> S5
+                S5 --> S6
+                S6 --> S7
+                S7 --> S8
+            end
+
+            %% Seller Product Management
+            subgraph "Product Management"
+                SM1["Edit<br/>Product Info"]:::usecase
+                SM2["Delete<br/>Product"]:::usecase
+                SM3["Update<br/>Price"]:::usecase
+                SM4["View Sales<br/>History"]:::usecase
+            end
+        end
+    end
+
+    %% System Functions (Bottom)
+    subgraph "System Functions"
+        SYS1["Handle<br/>Payments"]:::system
+        SYS2["Send<br/>Notifications"]:::system
+    end
+
+    %% Admin Functions (Bottom)
+    subgraph "Admin Functions"
+        A1["Manage<br/>Users"]:::admin
+        A2["Handle<br/>Reports"]:::admin
+    end
+
+    %% Primary Actor Connections
+    Buyer --> B1
+    Buyer --> B9
+    Buyer --> B10
+    Buyer --> B11
+    Buyer --> C1
+    Buyer --> C2
+    Buyer --> C3
+    Buyer --> C4
+
+    Seller --> S1
+    Seller --> SM1
+    Seller --> SM2
+    Seller --> SM3
+    Seller --> SM4
+    Seller --> C1
+    Seller --> C2
+    Seller --> C3
+    Seller --> C4
+
+    Admin --> A1
+    Admin --> A2
+
+    %% System Operation Connections
+    System --> SYS1
+    System --> SYS2
+
+    %% Feature Connections
+    B2 --> B9
+    B9 --> B10
+
+    %% System Interactions
+    B5 -->|Payment| SYS1
+    B5 -.->|Purchase Notify| SYS2
+    B7 -->|Escrow Release| SYS1
+    S7 -->|Payment Received| SYS1
+    B3 -.->|Notify| SYS2
+    S2 -.->|Notify| SYS2
+    SM3 -.->|Price Change Notify| SYS2

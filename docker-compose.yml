@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:14
+    ports:
+      - '3307:5432'
+    environment:
+      POSTGRES_USER: 'docker'
+      POSTGRES_PASSWORD: 'docker'
+      POSTGRES_DB: 'test_db'
+      TZ: 'America/Vancouver'
+    volumes:
+      - db-store:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker -d test_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4500
+      - TZ=America/Vancouver
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - '4500:4500'
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=4500
+      - JWT_SECRET=your_jwt_secret_key
+      - CORS_ORIGIN=http://localhost:3000
+      - TZ=America/Vancouver
+    depends_on:
+      db:
+        condition: service_healthy
+    command: npm run start:dev
+
+volumes:
+  db-store:

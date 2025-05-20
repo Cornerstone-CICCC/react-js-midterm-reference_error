@@ -1,0 +1,208 @@
+classDiagram
+    %% Domain Layer
+    namespace Domain {
+        class Order {
+            +OrderId id
+            +ProductId productId
+            +UserId buyerId
+            +UserId sellerId
+            +Money finalPrice
+            +OrderStatus status
+            +Date createdAt
+            +Date? completedAt
+            +complete(): void
+            +cancel(): void
+        }
+
+        class Payment {
+            +PaymentId id
+            +OrderId orderId
+            +Money amount
+            +Money fee
+            +PaymentMethod method
+            +PaymentStatus status
+            +Date paidAt
+            +Date? releasedAt
+            +release(): void
+        }
+
+        class TransactionHistory {
+            +HistoryId id
+            +UserId userId
+            +OrderId orderId
+            +TransactionType type
+            +Date createdAt
+        }
+
+        class Money {
+            +number amount
+            +Currency currency
+        }
+
+        class OrderStatus {
+            <<enumeration>>
+            PENDING_PAYMENT
+            PAID
+            COMPLETED
+            CANCELLED
+        }
+
+        class PaymentStatus {
+            <<enumeration>>
+            PENDING
+            COMPLETED
+            RELEASED
+            FAILED
+        }
+
+        class PaymentMethod {
+            <<enumeration>>
+            CREDIT_CARD
+            DEBIT_CARD
+            PAYPAL
+        }
+
+        class TransactionType {
+            <<enumeration>>
+            PURCHASE
+            SALE
+        }
+
+        class Currency {
+            <<enumeration>>
+            CAD
+            USD
+        }
+    }
+
+    %% Application Layer
+    namespace Application {
+        class OrderService {
+            -orderRepository: IOrderRepository
+            -paymentRepository: IPaymentRepository
+            -transactionHistoryRepository: ITransactionHistoryRepository
+            +createOrder(dto: CreateOrderDto): Promise~Order~
+            +completeOrder(orderId: string): Promise~Order~
+            +cancelOrder(orderId: string): Promise~void~
+            +getOrderById(orderId: string): Promise~Order~
+            +getUserOrders(userId: string): Promise~Order[]~
+        }
+
+        class PaymentService {
+            -paymentRepository: IPaymentRepository
+            -paymentGateway: IPaymentGateway
+            +processPayment(dto: ProcessPaymentDto): Promise~Payment~
+            +releasePayment(paymentId: string): Promise~Payment~
+            +refundPayment(paymentId: string): Promise~Payment~
+        }
+
+        class TransactionHistoryService {
+            -transactionHistoryRepository: ITransactionHistoryRepository
+            +createPurchaseHistory(userId: string, orderId: string): Promise~TransactionHistory~
+            +createSalesHistory(userId: string, orderId: string): Promise~TransactionHistory~
+            +getUserTransactionHistory(userId: string): Promise~TransactionHistory[]~
+        }
+
+        class CreateOrderDto {
+            +string productId
+            +string buyerId
+            +string sellerId
+            +number amount
+            +string currency
+        }
+
+        class ProcessPaymentDto {
+            +string orderId
+            +string paymentMethod
+            +number amount
+            +string currency
+        }
+
+        class TransactionHistoryDto {
+            +string id
+            +string userId
+            +string orderId
+            +string type
+            +Date createdAt
+        }
+    }
+
+    %% Infrastructure Layer
+    namespace Infrastructure {
+        class OrderRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Order~
+            +findByUser(userId: string): Promise~Order[]~
+            +save(order: Order): Promise~void~
+            +update(order: Order): Promise~void~
+        }
+
+        class PaymentRepository {
+            -prisma: PrismaService
+            +findById(id: string): Promise~Payment~
+            +findByOrder(orderId: string): Promise~Payment~
+            +save(payment: Payment): Promise~void~
+            +update(payment: Payment): Promise~void~
+        }
+
+        class TransactionHistoryRepository {
+            -prisma: PrismaService
+            +findByUser(userId: string): Promise~TransactionHistory[]~
+            +save(history: TransactionHistory): Promise~void~
+        }
+
+        class IOrderRepository {
+            <<interface>>
+            +findById(id: string): Promise~Order~
+            +findByUser(userId: string): Promise~Order[]~
+            +save(order: Order): Promise~void~
+            +update(order: Order): Promise~void~
+        }
+
+        class IPaymentRepository {
+            <<interface>>
+            +findById(id: string): Promise~Payment~
+            +findByOrder(orderId: string): Promise~Payment~
+            +save(payment: Payment): Promise~void~
+            +update(payment: Payment): Promise~void~
+        }
+
+        class ITransactionHistoryRepository {
+            <<interface>>
+            +findByUser(userId: string): Promise~TransactionHistory[]~
+            +save(history: TransactionHistory): Promise~void~
+        }
+
+        class IPaymentGateway {
+            <<interface>>
+            +processPayment(paymentInfo: PaymentInfo): Promise~PaymentResult~
+            +refund(paymentId: string): Promise~void~
+        }
+    }
+
+    %% Relationships
+    Order "1" --> "1" Payment : has
+    Order "1" --> "1..*" TransactionHistory : generates
+    Order --> OrderStatus : uses
+    Order --> Money : uses
+    Payment --> PaymentStatus : uses
+    Payment --> PaymentMethod : uses
+    Payment --> Money : uses
+    TransactionHistory --> TransactionType : uses
+    Money --> Currency : uses
+
+    OrderService --> IOrderRepository : uses
+    OrderService --> IPaymentRepository : uses
+    OrderService --> ITransactionHistoryRepository : uses
+    OrderService --> CreateOrderDto : uses
+
+    PaymentService --> IPaymentRepository : uses
+    PaymentService --> IPaymentGateway : uses
+    PaymentService --> ProcessPaymentDto : uses
+
+    TransactionHistoryService --> ITransactionHistoryRepository : uses
+    TransactionHistoryService --> TransactionHistoryDto : returns
+
+    OrderRepository ..|> IOrderRepository : implements
+    PaymentRepository ..|> IPaymentRepository : implements
+    TransactionHistoryRepository ..|> ITransactionHistoryRepository : implements

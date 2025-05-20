@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant C as Client
+    participant G as GraphQL
+    participant A as Auth Service
+    participant S as Supabase
+    participant D as Database
+    
+    C->>G: login(email, password)
+    G->>A: authenticate
+    A->>S: signInWithPassword
+    S-->>A: session + user
+    A->>D: findUserByAuthId
+    D-->>A: user data
+    A-->>G: combined result
+    G-->>C: token + user
